@@ -14,6 +14,7 @@ namespace Server
     {
         public List<Client> clients;
         TcpListener server;
+        TcpListener sameComputer;
         List<IDisposable> unsubscribers;
 
 
@@ -21,8 +22,10 @@ namespace Server
         {
             clients = new List<Client>();
             unsubscribers = new List<IDisposable>();
-            server = new TcpListener(IPAddress.Parse("127.0.0.1"), 9999);
+            server = new TcpListener(IPAddress.Parse("192.168.1.3"), 9999);
+            sameComputer = new TcpListener(IPAddress.Parse("127.0.0.1"), 9999);
             server.Start();
+            sameComputer.Start();
         }
 
         public void Subscribe(IObservable<Message> newClient)
@@ -58,10 +61,14 @@ namespace Server
         {
             if (server.Pending())
             {
-                AcceptClient();
+                AcceptClient(server);
+            }
+            if (sameComputer.Pending())
+            {
+                AcceptClient(sameComputer);
             }
         }
-        private void AcceptClient()
+        private void AcceptClient(TcpListener server)
         {
             Client client;
             TcpClient clientSocket = default(TcpClient);

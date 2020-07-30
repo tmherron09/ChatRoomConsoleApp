@@ -8,6 +8,10 @@ namespace Client
 {
     class Program
     {
+        // Same Computer: "127.0.0.1"
+        // LAN: 192.168.1.3
+        // Codeanywhere: ??
+
         static void Main(string[] args)
         {
             Console.WriteLine("Please input your username:");
