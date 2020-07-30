@@ -10,10 +10,16 @@ namespace Client
     {
         static void Main(string[] args)
         {
-
-            Client client = new Client("127.0.0.1", 9999);
-            client.Send();
-            client.Recieve();
+            Console.WriteLine("Please input your username:");
+            string userName = UI.GetInput();
+            Client client = new Client("127.0.0.1", 9999, userName);
+            client.Send(userName);
+            while (true)
+            {
+                client.Recieve();
+                client.Send();
+                
+            }
             Console.ReadLine();
         }
     }

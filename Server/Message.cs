@@ -10,21 +10,8 @@ namespace Server
     {
         public Client sender;
         public string Body;
-        public string UserId
-        {
-            get
-            {
-                if(UserId != null)
-                {
-                    return $"{UserId}: ";
-                }
-                return $"No User Name: ";
-            }
-            set
-            {
-                UserId = value;
-            }
-        }
+        public string UserId;
+        
         public Message(Client Sender, string Body)
         {
             sender = Sender;

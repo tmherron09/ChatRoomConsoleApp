@@ -16,32 +16,19 @@ namespace Server
 
         private List<IObserver<Message>> observers;
 
-        public bool incomingData 
-        { 
-            get 
-            {
-                if(stream.DataAvailable)
-                {
-                    foreach(IObserver<Message> observer in observers)
-                    {
-                        observer.OnNext(new Message(this, Recieve()));
-                    }
-                    return true;
-                }
-                return false;
-            }
-        }
         public Client(NetworkStream Stream, TcpClient Client)
         {
             stream = Stream;
             client = Client;
             UserId = "495933b6-1762-47a1-b655-483510072e73";
+            observers = new List<IObserver<Message>>();
         }
         public Client(NetworkStream Stream, TcpClient Client, string userName)
         {
             stream = Stream;
             client = Client;
             UserId = userName;
+            observers = new List<IObserver<Message>>();
         }
         public void Send(string Message)
         {
@@ -57,7 +44,17 @@ namespace Server
             Console.WriteLine(recievedMessageString);
             return recievedMessageString;
         }
-
+        public void Update()
+        {
+            if(stream.DataAvailable)
+            {
+                Message message = new Message(this, Recieve());
+                foreach(IObserver<Message> observer in observers)
+                {
+                    observer.OnNext(message);
+                }
+            }
+        }
         public IDisposable Subscribe(IObserver<Message> observer)
         {
             if (!observers.Contains(observer))

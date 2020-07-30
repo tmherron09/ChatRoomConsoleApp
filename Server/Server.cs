@@ -12,15 +12,26 @@ namespace Server
 {
     class Server : IObserver<Message>
     {
-        List<Client> clients;
-        public static Client client;
+        public List<Client> clients;
         TcpListener server;
+        List<IDisposable> unsubscribers;
+
+
         public Server()
         {
+            clients = new List<Client>();
+            unsubscribers = new List<IDisposable>();
             server = new TcpListener(IPAddress.Parse("127.0.0.1"), 9999);
             server.Start();
         }
 
+        public void Subscribe(IObservable<Message> newClient)
+        {
+            if (newClient != null)
+            {
+                unsubscribers.Add(newClient.Subscribe(this));
+            }
+        }
         public void OnCompleted()
         {
             throw new NotImplementedException();
@@ -33,35 +44,44 @@ namespace Server
 
         public void OnNext(Message value)
         {
-            Respond(value);
+            string outgoingMessage = $"{value.UserId}: {value.Body}";
+            Respond(outgoingMessage);
         }
 
-        public void Run()
+        //public void Run()
+        //{
+        //    AcceptClient();
+        //    string message = client.Recieve();
+        //    Respond(message);
+        //}
+        public void Update()
         {
-            AcceptClient();
-            string message = client.Recieve();
-            Respond(message);
-        }
-        public void MainLoop()
-        {
-            while (true)
+            if (server.Pending())
             {
-                if (server.Pending())
-                {
-                    AcceptClient();
-                }
+                AcceptClient();
             }
-
         }
         private void AcceptClient()
         {
+            Client client;
             TcpClient clientSocket = default(TcpClient);
             clientSocket = server.AcceptTcpClient();
             Console.WriteLine("Connected");
             NetworkStream stream = clientSocket.GetStream();
-            client = new Client(stream, clientSocket, GetUserName(stream));
+            client = new Client(stream, clientSocket);
             clients.Add(client);
+            client.UserId = GetUserName(stream);
+            Subscribe(client);
+            AlertNewUser(client);
+            
         }
+        private void AlertNewUser(Client client)
+        {
+            string outgoingString = $"Welcome *{client.UserId}* to the server!";
+            Console.WriteLine(outgoingString);
+            Respond(outgoingString);
+        }
+        // Message from Server
         private void Respond(string body)
         {
             foreach (Client client in clients)
@@ -69,6 +89,7 @@ namespace Server
                 client.Send(body);
             }
         }
+        // Message from one user to all.
         private void Respond(Message message)
         {
             foreach (Client client in clients)
@@ -77,14 +98,16 @@ namespace Server
                 message.sender.Send(outgoingString);
             }
         }
+        // Immediately catch username upon connection if available.
         private string GetUserName(NetworkStream stream)
         {
-            if (stream.DataAvailable)
+            byte[] userName = new byte[256];
+            stream.Read(userName, 0, userName.Length);
+            string userNameString = Encoding.ASCII.GetString(userName);
+            userNameString = userNameString.Replace("\0", string.Empty);
+            if (userNameString != null)
             {
-                byte[] userName = new byte[256];
-                stream.Read(userName, 0, userName.Length);
-                string userNameString = Encoding.ASCII.GetString(userName);
-                return userNameString.Replace("\0", string.Empty);
+                return userNameString;
             }
             return "Unknown User";
         }
